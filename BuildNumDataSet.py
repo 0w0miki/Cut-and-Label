@@ -37,6 +37,7 @@ class Cut(object):
         self.px=-1
         self.py=-1
         self.undoimgs=[]
+        self.files=[]
         self.nums=[]
         self.inputComplete=True
         self.suffix='.jpg'
@@ -91,9 +92,27 @@ class Cut(object):
             new_path=ops.join(path,chr(ord('a')+i))
             if not ops.exists(new_path):
                 os.makedirs(new_path)
+    
+    def init_file(self):
+        files = os.listdir(self.image_dir)
+        for file_name in files:
+            full_name = ops.join(self.image_dir,file_name)
+            if ops.isfile(full_name):
+                if full_name.split('.')[-1] == 'jpg' or full_name.split('.')[-1] == 'JPG':
+                    self.files.append(full_name)
+        self.file_index= -1
+        self.files.sort()
+        
+    def next_file(self):
+        self.file_index=self.file_index+1
+        return self.files[self.file_index]
+
+    def this_file(self):
+        return self.files[self.file_index]
 
     def parse_image(self,image_dir, output_dir):
         self.test_dir(output_dir)
+        self.init_file()
         self.index = 0
         cv2.namedWindow("image",0)
         cv2.setMouseCallback('image',self.MouseCallBack)
@@ -102,7 +121,7 @@ class Cut(object):
             k = cv2.waitKey() & 0xFF
             if k == 27:
                 #ESC
-                f.close()
+                print("用户中途退出,祝你训练成功~")
                 break
             if not self.inputComplete:
                 if 48 <= k <= 57 or 65 <= k <= 90 or 97 <= k <= 122:
@@ -116,7 +135,11 @@ class Cut(object):
                 if self.nums:
                     self.save()
                 self.index += 1
-                image_name = ops.join(image_dir , str(self.index) + self.suffix)
+                try:
+                    image_name = self.next_file()
+                except:
+                    print("所有图片标定完毕,祝你训练成功~")
+                    break
                 print('try to open {:s}'.format(image_name))
                 self.origin = cv2.imread(image_name,0)
                 self.img = self.origin.copy()
@@ -129,7 +152,7 @@ class Cut(object):
                 if self.nums:
                     self.save()
                 # self.index += 1
-                image_name = ops.join(image_dir , str(self.index) + self.suffix)
+                image_name = self.this_file()
                 print('try to open {:s}'.format(image_name))
                 self.origin = cv2.imread(image_name,0)
                 self.img = self.origin.copy()
